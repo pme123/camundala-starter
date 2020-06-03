@@ -17,7 +17,7 @@ organizationHomepage := Some(url("https://github.com/pme123"))
   For Camundala and Spring Boot
  */
 libraryDependencies ++= Seq(
-  "pme123" %% "camundala-services" % "0.0.3"
+  "pme123" %% "camundala-cli" % "0.0.5"
 )
 
 /*
@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
 enablePlugins(JavaAppPackaging)
 
 // set the main entrypoint to the application that is used in startup scripts
-mainClass in Compile := Some("pme123.camundala.services.CamundaApp")
+mainClass in Compile := Some("pme123.camundala.starter.CamundalaStarterApp")
 
 // the Docker image to base on (alpine is smaller than the debian based one (120 vs 650 MB)
 dockerBaseImage := "openjdk:11-jre-slim"
