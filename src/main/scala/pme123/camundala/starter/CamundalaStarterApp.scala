@@ -27,6 +27,6 @@ object CamundalaStarterApp extends StandardCliApp {
   )
 
   protected def appRunnerLayer: ZLayer[StandardAppDeps, Nothing, AppRunner] =
-    StandardApp.layer(classOf[CamundalaStarterApp], StaticFile("bpmnModels.sc", "."))
+    StandardApp.layer(classOf[CamundalaStarterApp], StaticFile("bpmnModels.sc", "bpmn"))
 
 }

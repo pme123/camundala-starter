@@ -31,7 +31,7 @@ services:
       - camunda-db
 
   camunda:
-    image: camundala-docker:latest
+    image: camundala-starter:latest
     networks:
       - mynet
     #volumes:

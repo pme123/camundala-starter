@@ -17,7 +17,7 @@ organizationHomepage := Some(url("https://github.com/pme123"))
   For Camundala and Spring Boot
  */
 libraryDependencies ++= Seq(
-  "pme123" %% "camundala-cli" % "0.0.5"
+  "pme123" %% "camundala-cli" % "0.0.7"
 )
 
 /*
@@ -25,11 +25,12 @@ libraryDependencies ++= Seq(
  */
 
 // enable the Java app packaging archetype and Ash script (for Alpine Linux, doesn't have Bash)
-enablePlugins(JavaAppPackaging)
+enablePlugins(JavaAppPackaging, DockerPlugin)
 
 // set the main entrypoint to the application that is used in startup scripts
-mainClass in Compile := Some("pme123.camundala.starter.CamundalaStarterApp")
+//mainClass in Compile := Some("pme123.camundala.starter.CamundalaStarterApp")
 
+Compile / mainClass := Some("pme123.camundala.services.CamundaApp")
 // the Docker image to base on (alpine is smaller than the debian based one (120 vs 650 MB)
 dockerBaseImage := "openjdk:11-jre-slim"
 
