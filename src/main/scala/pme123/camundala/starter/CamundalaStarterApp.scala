@@ -30,28 +30,3 @@ object CamundalaStarterApp extends StandardCliApp {
     StandardApp.layer(classOf[CamundalaStarterApp], StaticFile("bpmnModels.sc", "."))
 
 }
-object deploys {
-
-  val camundaUrl: Url = "http://localhost:8085/rest"
-  val camundaDevUrl: Url = "http://localhost:8088/rest"
-
-  def restApi(endpoint: Url): CamundaEndpoint = CamundaEndpoint(endpoint, "kermit", Sensitive("kermit"))
-
-  def standard(bpmns: Seq[Bpmn], additionalUsers: Seq[User] = Seq.empty): Deploys =
-    Deploys(Set(
-      Deploy("default", bpmns, DockerConfig(dockerDir = "docker",
-        composeFiles = Seq("docker-compose-dev")),
-        camundaEndpoint = restApi(camundaDevUrl),
-        additionalUsers = additionalUsers
-      ),
-      Deploy("remote", bpmns,
-        DockerConfig(dockerDir = "docker",
-          composeFiles = Seq("docker-compose"),
-          maybeReadyUrl = Some(camundaUrl),
-          projectName = "camunda-remote"
-        ),
-        camundaEndpoint = restApi(camundaDevUrl),
-        additionalUsers = additionalUsers
-      )
-    ))
-}
