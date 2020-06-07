@@ -3,79 +3,101 @@ import pme123.camundala.camunda.delegate.RestServiceDelegate.RestServiceTempl
 import pme123.camundala.camunda.service.restService.Request
 import pme123.camundala.camunda.service.restService.RequestPath.Path
 import pme123.camundala.model.bpmn.UserTaskForm.FormField.Constraint.Required
-import pme123.camundala.model.bpmn.UserTaskForm.FormField.{EnumField, EnumValue, EnumValues, SimpleField}
+import pme123.camundala.model.bpmn.UserTaskForm.FormField.{EnumField, SimpleField}
 import pme123.camundala.model.bpmn.UserTaskForm.GeneratedForm
 import pme123.camundala.model.bpmn._
 import pme123.camundala.model.deploy.Deploys
 import pme123.camundala.starter.SwapiService
 import pme123.camundala.starter.bpmns.swapiHost
 
-val worker: Group = Group("worker", Some("Worker"))
-val guest: Group = Group("guest", Some("Guest"))
-val hans: User = User("hans", Some("Müller"), Some("Hans"), Some("hans@mueller.ch"), Seq(worker))
-val heidi: User = User("heidi", Some("Meier"), Some("Heidi"), Some("heidi@meier.ch"), Seq(guest))
-val peter: User = User("peter", Some("Arnold"), Some("Peter"), Some("peter@arnold.ch"), Seq(guest, worker))
+val worker: Group =
+  Group("worker")
+    .name("Worker")
+val guest: Group =
+  Group("guest")
+    .name("Guest")
+val hans: User =
+  User("hans")
+    .name("Müller")
+    .firstName("Hans")
+    .email("hans@mueller.ch")
+    .group(worker)
+val heidi: User =
+  User("heidi")
+    .name("Meier")
+    .firstName("Heidi")
+    .email("heidi@meier.ch")
+    .group(guest)
+val peter: User =
+  User("peter")
+    .name("Arnold")
+    .firstName("Peter")
+    .email("peter@arnold.ch")
+    .group(guest)
+    .group(worker)
 
-val swapiProcess = BpmnProcess("SwapiProcess",
-  starterUsers = CandidateUsers(peter),
-  starterGroups = CandidateGroups(worker),
-  userTasks = List(
-    UserTask("ShowResultTask",
-      candidateUsers = CandidateUsers(hans),
-      candidateGroups = CandidateGroups(guest),
-      maybeForm = Some(GeneratedForm(Seq(SimpleField("swapiResult", "SWAPI Result", validations = Seq(Required))),
-      ))
+val selectCategoryForm =
+  GeneratedForm()
+    .--- {
+      EnumField("_category_")
+        .label("Category")
+        .default("people")
+        .value("people", "People")
+        .value("planets", "Planets")
+        .value("films", "Films")
+        .value("vehicles", "Vehicles")
+        .value("starships", "Starships")
+        .validate(Required)
+    }
+
+val callSwapiTask = RestServiceTempl(
+  Request(
+    swapiHost,
+    path = Path("_category_/"),
+    responseVariable = "swapiResult",
+    mappings = Map("_category_" -> "people")
+  )
+).asServiceTask("CallSwapiServiceTask")
+
+val swapiProcess =
+  BpmnProcess("SwapiProcess")
+    .starterUser(peter)
+    .starterGroup(worker)
+    .***(
+      StartEvent("DefineInputsStartEvent")
+        .form(selectCategoryForm)
     )
-  ),
-  serviceTasks = List(
-    RestServiceTempl(
-      Request(
-        swapiHost,
-        path = Path("_category_/"),
-        responseVariable = "swapiResult",
-        mappings = Map("_category_" -> "people")
-      )
-    ).asServiceTask("CallSwapiServiceTask")
-  ),
-  sendTasks = List(),
-  startEvents = List(StartEvent("DefineInputsStartEvent",
-    Some(GeneratedForm(Seq(EnumField("_category_", "Category", "people",
-      EnumValues(Seq(EnumValue("people", "People"),
-        EnumValue("planets", "Planets"),
-        EnumValue("films", "Films"),
-        EnumValue("vehicles", "Vehicles"),
-        EnumValue("starships", "Starships"))),
-      validations = Seq(Required))))
-    ))),
-  exclusiveGateways = List(),
-  parallelGateways = List(),
-  sequenceFlows = List(SequenceFlow("SequenceFlow_9"), SequenceFlow("SequenceFlow_0m72fzi"), SequenceFlow("SequenceFlow_0k5kyka")),
-)
+    .serviceTask(callSwapiTask)
+    .***(
+      UserTask("ShowResultTask")
+        .candidateUser(hans)
+        .candidateGroup(guest)
+        .===(
+          GeneratedForm()
+            .--- {
+              SimpleField("swapiResult")
+                .label("SWAPI Result")
+                .validate(Required)
+            })
+    )
 
-val swapiPlanetProcess = BpmnProcess("SwapiPlanetProcess",
-  userTasks = List(
+val swapiPlanetProcess =
+  BpmnProcess("SwapiPlanetProcess")
+    .***(
+      StartEvent("ShowStarWarsPlanetsStartEvent")
+    ).***(
+    SwapiService("planets/").asServiceTask("CallSwapiServiceTask1")
+  ).***(
     UserTask("ShowResultTask1",
       maybeForm = Some(GeneratedForm(Seq(SimpleField("swapiResult", "SWAPI Result", validations = Seq(Required))),
       )))
-  ),
-  serviceTasks = List(
-    SwapiService("planets/").asServiceTask("CallSwapiServiceTask1")
-  ),
-  sendTasks = List(),
-  startEvents = List(StartEvent("ShowStarWarsPlanetsStartEvent")),
-  exclusiveGateways = List(),
-  parallelGateways = List(),
-  sequenceFlows = List(SequenceFlow("SequenceFlow_1keaeek"), SequenceFlow("SequenceFlow_0ekpwko"), SequenceFlow("SequenceFlow_1jzq3xe")),
-)
+  )
 
 val bpmns: Seq[Bpmn] =
   Seq(
-    Bpmn("StarterProcess.bpmn",
-      StaticFile("StarterProcess.bpmn", "bpmn"),
-      List(
-        swapiProcess,
-        swapiPlanetProcess
-      ))
+    Bpmn("StarterProcess.bpmn", "StarterProcess.bpmn")
+      .process(swapiProcess)
+      .process(swapiPlanetProcess)
   )
 
 Deploys.standard(bpmns, Seq(heidi))

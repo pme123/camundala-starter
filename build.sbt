@@ -17,7 +17,7 @@ organizationHomepage := Some(url("https://github.com/pme123"))
   For Camundala and Spring Boot
  */
 libraryDependencies ++= Seq(
-  "pme123" %% "camundala-cli" % "0.0.7"
+  "pme123" %% "camundala-cli" % "0.0.9"
 )
 
 /*
